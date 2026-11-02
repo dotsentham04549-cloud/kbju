@@ -356,11 +356,12 @@ function perLine(n){let s=`${r0(n.kcal)} ккал · Б ${r1(n.p)} · Ж ${r1(n.
 const BASE=BASE_RAW.trim().split('\n').map(l=>{const a=l.split(';');return{id:'b'+hash(a[0]),type:'base',name:a[0].trim(),per:{kcal:+a[1],p:+a[2],f:+a[3],c:+a[4],fib:+a[5]||0,sug:+a[6]||0,alc:+a[7]||0},portion:+a[8]||100}});
 
 /* ===== Состояние ===== */
-const DEF={profile:null,over:{},diary:{},weights:[],foods:[],usage:{},ai:{provider:'gemini',gKey:'',gModel:'',key:'',model:'claude-sonnet-5-5'}};
+const DEF={profile:null,over:{},diary:{},weights:[],foods:[],usage:{},ai:{provider:'proxy',pUrl:'',pToken:'',gKey:'',gModel:'',key:'',model:'claude-sonnet-5-5'}};
 const clone=o=>JSON.parse(JSON.stringify(o));
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(clone(DEF),s||{});o.ai=Object.assign(clone(DEF.ai),o.ai||{});return o}catch(e){return clone(DEF)}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Не удалось сохранить: '+e.message)}}
 let S=load();
+if(S.ai.provider==='proxy'&&!S.ai.pUrl&&S.ai.gKey)S.ai.provider='gemini';
 let tab='diary', cur=today();
 const allItems=()=>[...S.foods,...BASE];
 const getItem=id=>allItems().find(i=>i.id===id);
@@ -520,7 +521,7 @@ function entryToFood(){
 /* ===== ИИ ===== */
 function renderAI(){
   const b=$('#addBody');
-  if(!aiReady()){b.innerHTML=`<div class="card in">Для ИИ нужен ключ — бесплатный ключ Gemini вставляется в «Настройках».<br><button class="mt" onclick="closeSheet();tab='set';render()">Открыть настройки</button></div>`;return}
+  if(!aiReady()){b.innerHTML=`<div class="card in">Для ИИ нужно настроить сервис в «Настройках» → ИИ.<br><button class="mt" onclick="closeSheet();tab='set';render()">Открыть настройки</button></div>`;return}
   b.innerHTML=`<textarea id="aitx" class="mt" rows="3" placeholder="Например: тарелка борща со сметаной, 2 куска чёрного хлеба, чай с ложкой сахара" oninput="aiText=this.value">${esc(aiText)}</textarea>
   <div class="row gap"><label class="btn" style="margin:0;color:var(--tx);font-size:15px">📷 Камера<input type="file" accept="image/*" capture="environment" hidden onchange="pickImg(this)"></label><label class="btn" style="margin:0;color:var(--tx);font-size:15px">🖼 Галерея<input type="file" accept="image/*" hidden onchange="pickImg(this)"></label>${aiImg?`<img class="thumb" src="data:image/jpeg;base64,${aiImg}"><button onclick="aiImg=null;renderAI()">✕</button>`:''}</div>
   <div class="mu sm mt">Чем точнее — тем лучше: «200 г», «полная тарелка», «жарил на масле».</div>
@@ -534,20 +535,34 @@ function pickImg(inp){
   img.onerror=()=>toast('Не удалось открыть фото');img.src=url;
 }
 /* --- ИИ: общий вход. content: [{type:'image',data:base64jpeg},{type:'text',text}] --- */
-const aiReady=()=>S.ai.provider==='claude'?!!S.ai.key:!!S.ai.gKey;
+const aiReady=()=>S.ai.provider==='claude'?!!S.ai.key:S.ai.provider==='proxy'?!!(S.ai.pUrl&&S.ai.pToken):!!S.ai.gKey;
+function proxyUrl(){let u=(S.ai.pUrl||'').trim().replace(/\/+$/,'');if(!u)return '';if(!/^https?:\/\//.test(u))u=/^[a-z0-9]{10,30}$/i.test(u)?`https://${u}.supabase.co/functions/v1/ai`:'https://'+u;if(/\.supabase\.co$/.test(u))u+='/functions/v1/ai';return u}
+let proxyRegion='';
 function callAI(system,content,maxTokens,json){return S.ai.provider==='claude'?callClaude(system,content,maxTokens):callGemini(system,content,maxTokens,json)}
+const isGem=()=>S.ai.provider!=='claude';
 
 /* --- Gemini (бесплатный ключ из Google AI Studio) --- */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function gErr(msg,status,raw){const e=new Error(msg);e.status=status;e.raw=raw||'';return e}
 async function gfetch(path,body){
   let r;
+  if(S.ai.provider==='proxy'){
+    const u=proxyUrl();if(!u)throw gErr('Не указан адрес сервера-посредника',0);
+    try{r=await fetch(u+(u.includes('?')?'&':'?')+'forceFunctionRegion=eu-central-1',{method:'POST',headers:{'content-type':'application/json','x-app-token':(S.ai.pToken||'').trim()},body:JSON.stringify({path,body:body||null})})}
+    catch(e){throw gErr('Нет связи с сервером-посредником (Supabase). Проверь интернет; если проект «уснул» — разбуди его в панели Supabase.',0)}
+    proxyRegion=r.headers.get('x-fn-region')||proxyRegion;
+    if(!r.ok){let j={};try{j=await r.clone().json()}catch(e){}
+      if(j.error&&j.error.source==='proxy'){const m=j.error.message||'';
+        if(r.status===401)throw gErr('Сервер отклонил токен приложения — он должен совпадать с APP_TOKEN в секретах.',401,m);
+        throw gErr('Сервер-посредник: '+m,r.status,m)}
+      if(r.status===404&&!(j.error&&j.error.message))throw gErr('Функция не найдена — проверь адрес/ID проекта и что функция залита (GitHub → Actions).',404,'')}
+  }else
   try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/'+path,body?{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':S.ai.gKey.trim()},body:JSON.stringify(body)}:{headers:{'x-goog-api-key':S.ai.gKey.trim()}})}
   catch(e){throw gErr('Нет связи с Gemini. Проверь интернет и что VPN включён.',0)}
   let j={};try{j=await r.json()}catch(e){}
   if(!r.ok){const m=(j.error&&j.error.message)||'',st=r.status;
-    if(/location is not supported|not supported in your|user location/i.test(m))throw gErr('Gemini не пускает из России — включи VPN (сервер в Европе или США).',st,m);
-    if(/api key not valid|API_KEY_INVALID|api key expired/i.test(m)||st===401)throw gErr('Ключ Gemini не принят — проверь, что вставлен целиком.',st,m);
+    if(/location is not supported|not supported in your|user location/i.test(m))throw gErr(S.ai.provider==='proxy'?'Google не пустил сервер-посредник по региону — проверь, что проект Supabase во Франкфурте.':'Gemini не пускает из России — включи VPN (сервер в Европе или США) или переключись на «свой сервер».',st,m);
+    if(/api key not valid|API_KEY_INVALID|api key expired/i.test(m)||st===401)throw gErr(S.ai.provider==='proxy'?'Google не принял ключ Gemini в секретах Supabase (GEMINI_KEY).':'Ключ Gemini не принят — проверь, что вставлен целиком.',st,m);
     if(st===429)throw gErr('Лимит бесплатных запросов исчерпан.',st,m);
     if(st===404)throw gErr('Модель Gemini не найдена.',st,m);
     if(st===503||st===500)throw gErr('Сервер Gemini перегружен.',st,m);
@@ -782,9 +797,13 @@ function renderSettings(){
     <li>Алкоголь при больной печени — лучше ноль, он считается отдельно.</li></ul>
     <div class="mu">Темп и цель стоит сверить с лечащим врачом.</div></div>`;
   }
-  const g=S.ai.provider!=='claude';
-  h+=`<h2>ИИ</h2><div class="card"><label>Сервис</label><select id="prov" onchange="saveAI(true);S.ai.provider=this.value;save();renderSettings()">${o('gemini','Google Gemini — бесплатно',S.ai.provider)}${o('claude','Claude (Anthropic) — платно',S.ai.provider)}</select>
-  ${g?`<label>Ключ Gemini</label><input id="gk" type="password" value="${esc(S.ai.gKey)}" placeholder="вставь ключ сюда" autocomplete="off">
+  const pv=S.ai.provider;
+  h+=`<h2>ИИ</h2><div class="card"><label>Сервис</label><select id="prov" onchange="saveAI(true);S.ai.provider=this.value;save();renderSettings()">${o('proxy','Gemini через свой сервер — без VPN',pv)}${o('gemini','Gemini напрямую — нужен VPN',pv)}${o('claude','Claude (Anthropic) — платно, VPN',pv)}</select>
+  ${pv==='proxy'?`<label>Адрес функции или ID проекта Supabase</label><input id="pu" value="${esc(S.ai.pUrl||'')}" placeholder="например abcdefghijklmnop" autocomplete="off" autocapitalize="off">
+  <label>Токен приложения</label><div class="row"><input id="pt" class="grow" type="password" value="${esc(S.ai.pToken||'')}" placeholder="длинный пароль" autocomplete="off"><button onclick="genToken()">Создать</button></div>
+  <div class="mu sm mt">Ключ Gemini хранится на сервере, в телефоне его нет. Токен — пароль между приложением и сервером: тот же должен быть в секрете APP_TOKEN.</div>
+  ${S.ai.gModel?`<div class="mu sm">Модель: ${esc(S.ai.gModel)}${proxyRegion?' · сервер: '+esc(proxyRegion):''}</div>`:''}`
+  :pv==='gemini'?`<label>Ключ Gemini</label><input id="gk" type="password" value="${esc(S.ai.gKey)}" placeholder="вставь ключ сюда" autocomplete="off">
   <div class="mu sm mt">Модель: ${S.ai.gModel?esc(S.ai.gModel):'подберётся сама при первой проверке'}</div>
   <div class="card in sm"><b>Как получить бесплатный ключ</b><ol style="margin:6px 0;padding-left:18px"><li>Включи VPN (Google не работает с российских адресов).</li><li>Открой aistudio.google.com, войди Google-аккаунтом.</li><li>Get API key → Create API key. Карта не нужна.</li><li>Скопируй ключ (начинается с AIza… или AQ.…) и вставь сюда.</li></ol>VPN нужен и потом, во время оценки еды.</div>`
   :`<label>API-ключ Claude</label><input id="ak" type="password" value="${esc(S.ai.key)}" placeholder="sk-ant-…" autocomplete="off">
@@ -794,7 +813,7 @@ function renderSettings(){
   <div id="aistat"></div><div class="mu sm mt">Ключи хранятся только на этом телефоне.</div></div>
   <h2>Данные</h2><div class="card"><div class="mu sm">Всё хранится в телефоне. Делай резервную копию раз в пару недель.</div>
   <div class="row gap"><button onclick="exportData()">⬇ Сохранить копию</button><label class="btn" style="margin:0;color:var(--tx);font-size:15px">⬆ Загрузить копию<input type="file" accept=".json,application/json" hidden onchange="importData(this)"></label></div>
-  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v5</div>`;
+  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v6</div>`;
   $('#view').innerHTML=h;
 }
 function saveProfile(){
@@ -806,6 +825,7 @@ function saveProfile(){
 }
 function saveOver(){for(const k of['kcal','p','f','c','sug','fib']){const v=$('#ov_'+k).value;if(v==='')delete S.over[k];else S.over[k]=+v}save();render();toast('Сохранено')}
 function saveAI(silent){
+  if($('#pu')){const u=$('#pu').value.trim();if(u!==S.ai.pUrl){S.ai.pUrl=u;S.ai.gModel=''}S.ai.pToken=$('#pt').value.trim()}
   if($('#gk')){const k=$('#gk').value.trim();if(k!==S.ai.gKey){S.ai.gKey=k;S.ai.gModel=''}}
   if($('#ak')){S.ai.key=$('#ak').value.trim();S.ai.model=$('#am2').value.trim()||DEF.ai.model}
   save();if(!silent)toast('Сохранено');
@@ -813,14 +833,15 @@ function saveAI(silent){
 async function testAI(){
   saveAI(true);if(!aiReady())return toast('Вставь ключ');const st=$('#aistat');if(st)st.innerHTML='<div class="mu sm mt">Проверяю…</div>';
   try{
-    if(S.ai.provider!=='claude')await geminiModel(true);
+    if(isGem())await geminiModel(true);
     await callAI('Ответь одним словом.',[{type:'text',text:'Скажи: работает'}],50);
-    const m=S.ai.provider!=='claude'?aiUsedModel:S.ai.model;
+    const m=isGem()?aiUsedModel+(S.ai.provider==='proxy'&&proxyRegion?' · сервер: '+proxyRegion:''):S.ai.model;
     if(tab==='set')renderSettings();const s2=$('#aistat');if(s2)s2.innerHTML=`<div class="card in" style="margin-top:12px"><b class="okc">✓ ИИ работает</b><div class="mu sm">Модель: ${esc(m)}</div></div>`;
   }catch(e){const s2=$('#aistat');if(s2)s2.innerHTML=aiErrHTML(e);else toast(e.message)}
 }
-function exportData(){const b=new Blob([JSON.stringify({...S,ai:{...S.ai,key:'',gKey:''}},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kbju-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
-function importData(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.diary)throw 0;if(!confirm('Заменить текущие данные копией?'))return;const key=S.ai.key,gk=S.ai.gKey;S=Object.assign(clone(DEF),o);S.ai=Object.assign(clone(DEF.ai),o.ai||{});if(!S.ai.key)S.ai.key=key;if(!S.ai.gKey)S.ai.gKey=gk;save();render();toast('Загружено')}catch(e){toast('Это не файл копии')}};r.readAsText(f)}
+function genToken(){const a=new Uint8Array(24);crypto.getRandomValues(a);const t=Array.from(a,b=>'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%55]).join('');$('#pt').value=t;$('#pt').type='text';saveAI(true);try{navigator.clipboard.writeText(t).then(()=>toast('Токен создан и скопирован — вставь его в секрет APP_TOKEN'),()=>toast('Токен создан — скопируй его'))}catch(e){toast('Токен создан — скопируй его')}}
+function exportData(){const b=new Blob([JSON.stringify({...S,ai:{...S.ai,key:'',gKey:'',pToken:''}},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kbju-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function importData(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.diary)throw 0;if(!confirm('Заменить текущие данные копией?'))return;const key=S.ai.key,gk=S.ai.gKey,pt=S.ai.pToken;S=Object.assign(clone(DEF),o);S.ai=Object.assign(clone(DEF.ai),o.ai||{});if(!S.ai.key)S.ai.key=key;if(!S.ai.gKey)S.ai.gKey=gk;if(!S.ai.pToken)S.ai.pToken=pt;save();render();toast('Загружено')}catch(e){toast('Это не файл копии')}};r.readAsText(f)}
 function resetAll(){if(confirm('Точно стереть всё: дневник, вес, блюда?')&&confirm('Это необратимо. Стереть?')){localStorage.removeItem(KEY);S=load();seedStarter();render()}}
 
 /* ===== Мои блюда: стартовый набор ===== */

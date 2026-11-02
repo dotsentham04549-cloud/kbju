@@ -1,0 +1,6 @@
+# Минимальная конфигурация Supabase для функции-посредника КБЖУ.
+project_id = "kbju"
+
+[functions.ai]
+# Проверку JWT Supabase выключаем: функция защищена своим токеном приложения (x-app-token).
+verify_jwt = false
