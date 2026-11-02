@@ -2,7 +2,8 @@
 # Нужны секреты репозитория (Settings → Secrets and variables → Actions):
 #   SUPABASE_ACCESS_TOKEN — supabase.com/dashboard/account/tokens → Generate new token
 #   SUPABASE_PROJECT_REF  — ID проекта (Project Settings → General → Project ID)
-#   GEMINI_KEY            — ключ Gemini из aistudio.google.com
+#   GIGACHAT_KEY          — Authorization Key из developers.sber.ru (основной ИИ)
+#   GEMINI_KEY            — ключ Gemini (запасной, если GigaChat не задан)
 #   APP_TOKEN             — токен приложения (кнопка «Сгенерировать» в КБЖУ → Настройки → ИИ)
 # Запуск: сам при изменении функции, или вручную — Actions → «Supabase: посредник ИИ» → Run workflow
 # (вручную — после того как добавил или поменял секреты).
@@ -46,19 +47,21 @@ jobs:
         with:
           version: latest
 
-      - name: Секреты функции (ключ Gemini, токен приложения)
+      - name: Секреты функции (ключи ИИ, токен приложения)
         if: steps.chk.outputs.ok == 'true'
         env:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
           APP_TOKEN: ${{ secrets.APP_TOKEN }}
+          GIGACHAT_KEY: ${{ secrets.GIGACHAT_KEY }}
         run: |
           args=()
           [ -n "$GEMINI_KEY" ] && args+=("GEMINI_KEY=$GEMINI_KEY")
           [ -n "$APP_TOKEN" ] && args+=("APP_TOKEN=$APP_TOKEN")
+          [ -n "$GIGACHAT_KEY" ] && args+=("GIGACHAT_KEY=$GIGACHAT_KEY")
           if [ ${#args[@]} -gt 0 ]; then
             supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
           else
-            echo "::warning::GEMINI_KEY и APP_TOKEN не заданы в GitHub — оставляю секреты Supabase как есть."
+            echo "::warning::Ключи ИИ и APP_TOKEN не заданы в GitHub — оставляю секреты Supabase как есть."
           fi
 
       - name: Заливка функции ai

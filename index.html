@@ -454,7 +454,7 @@ let addMeal='zav',addTab='search',aiDraft=null,aiImg=null,aiText='';
 function openAdd(meal){addMeal=meal||defMeal();renderAdd()}
 function renderAdd(){
   openSheet(`${head('Добавить')}
-  <div class="seg"><button class="${addTab==='search'?'on':''}" onclick="addTab='search';renderAdd()">Поиск</button><button class="${addTab==='ai'?'on':''}" onclick="addTab='ai';renderAdd()">✦ ИИ / фото</button></div>
+  <div class="seg"><button class="${addTab==='search'?'on':''}" onclick="addTab='search';renderAdd()">Поиск</button><button class="${addTab==='ai'?'on':''}" onclick="addTab='ai';renderAdd()">✦ ИИ${S.ai.provider==='proxy'?'':' / фото'}</button></div>
   <div class="row gap"><span class="mu">в</span><div class="grow">${mealSelect('am',addMeal,'addMeal=this.value')}</div></div>
   <div id="addBody"></div>`);
   addTab==='search'?renderSearch():renderAI();
@@ -523,7 +523,7 @@ function renderAI(){
   const b=$('#addBody');
   if(!aiReady()){b.innerHTML=`<div class="card in">Для ИИ нужно настроить сервис в «Настройках» → ИИ.<br><button class="mt" onclick="closeSheet();tab='set';render()">Открыть настройки</button></div>`;return}
   b.innerHTML=`<textarea id="aitx" class="mt" rows="3" placeholder="Например: тарелка борща со сметаной, 2 куска чёрного хлеба, чай с ложкой сахара" oninput="aiText=this.value">${esc(aiText)}</textarea>
-  <div class="row gap"><label class="btn" style="margin:0;color:var(--tx);font-size:15px">📷 Камера<input type="file" accept="image/*" capture="environment" hidden onchange="pickImg(this)"></label><label class="btn" style="margin:0;color:var(--tx);font-size:15px">🖼 Галерея<input type="file" accept="image/*" hidden onchange="pickImg(this)"></label>${aiImg?`<img class="thumb" src="data:image/jpeg;base64,${aiImg}"><button onclick="aiImg=null;renderAI()">✕</button>`:''}</div>
+  <div class="row gap${S.ai.provider==='proxy'?' hidden':''}"><label class="btn" style="margin:0;color:var(--tx);font-size:15px">📷 Камера<input type="file" accept="image/*" capture="environment" hidden onchange="pickImg(this)"></label><label class="btn" style="margin:0;color:var(--tx);font-size:15px">🖼 Галерея<input type="file" accept="image/*" hidden onchange="pickImg(this)"></label>${aiImg?`<img class="thumb" src="data:image/jpeg;base64,${aiImg}"><button onclick="aiImg=null;renderAI()">✕</button>`:''}</div>
   <div class="mu sm mt">Чем точнее — тем лучше: «200 г», «полная тарелка», «жарил на масле».</div>
   <button class="pri wide" id="aibtn" onclick="runAI()">✦ Оценить</button><div id="aires"></div>`;
   if(aiDraft)renderDraft();
@@ -538,8 +538,24 @@ function pickImg(inp){
 const aiReady=()=>S.ai.provider==='claude'?!!S.ai.key:S.ai.provider==='proxy'?!!(S.ai.pUrl&&S.ai.pToken):!!S.ai.gKey;
 function proxyUrl(){let u=(S.ai.pUrl||'').trim().replace(/\/+$/,'');if(!u)return '';if(!/^https?:\/\//.test(u))u=/^[a-z0-9]{10,30}$/i.test(u)?`https://${u}.supabase.co/functions/v1/ai`:'https://'+u;if(/\.supabase\.co$/.test(u))u+='/functions/v1/ai';return u}
 let proxyRegion='';
-function callAI(system,content,maxTokens,json){return S.ai.provider==='claude'?callClaude(system,content,maxTokens):callGemini(system,content,maxTokens,json)}
-const isGem=()=>S.ai.provider!=='claude';
+function callAI(system,content,maxTokens,json){return S.ai.provider==='claude'?callClaude(system,content,maxTokens):S.ai.provider==='proxy'?callProxy('chat',system,content,maxTokens,json):callGemini(system,content,maxTokens,json)}
+const isGem=()=>S.ai.provider==='gemini';
+/* --- свой сервер (Supabase): GigaChat или Gemini на стороне сервера --- */
+async function callProxy(op,system,content,maxTokens,json){
+  const u=proxyUrl();if(!u)throw gErr('Не указан адрес сервера (ID проекта Supabase)',0);
+  const text=(content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n'),img=(content||[]).find(c=>c.type==='image');
+  let r;
+  try{r=await fetch(u+(u.includes('?')?'&':'?')+'forceFunctionRegion=eu-central-1',{method:'POST',headers:{'content-type':'application/json','x-app-token':(S.ai.pToken||'').trim()},body:JSON.stringify({op,system,text,image:img?img.data:undefined,maxTokens,json})})}
+  catch(e){throw gErr('Нет связи с сервером (Supabase). Проверь интернет; если проект «уснул» — разбуди его в панели Supabase.',0)}
+  proxyRegion=r.headers.get('x-fn-region')||proxyRegion;
+  let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok||j.error){const er=j.error||{},m=er.message||('Ошибка сервера '+r.status);
+    if(r.status===404&&!er.message)throw gErr('Функция не найдена — проверь ID проекта и что функция залита (GitHub → Actions).',404,'');
+    if(er.source==='proxy'&&r.status===401)throw gErr('Сервер отклонил токен приложения — он должен совпадать с секретом APP_TOKEN.',401,m);
+    throw gErr(m,r.status,er.raw||'')}
+  S.ai.pModel=(j.backend==='gigachat'?'GigaChat · ':'Gemini · ')+(j.model||'');save();
+  return j.text||'';
+}
 
 /* --- Gemini (бесплатный ключ из Google AI Studio) --- */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -636,11 +652,11 @@ ${mine?'Личные блюда пользователя (если позици�
 }
 async function runAI(){
   aiText=($('#aitx')||{}).value||aiText;
-  if(!aiText.trim()&&!aiImg)return toast('Опиши еду или добавь фото');
+  if(!aiText.trim()&&(!aiImg||S.ai.provider==='proxy'))return toast(S.ai.provider==='proxy'?'Опиши еду словами':'Опиши еду или добавь фото');
   const btn=$('#aibtn');btn.disabled=true;btn.textContent='✦ Считаю…';
   try{
     const content=[];
-    if(aiImg)content.push({type:'image',data:aiImg});
+    if(aiImg&&S.ai.provider!=='proxy')content.push({type:'image',data:aiImg});
     content.push({type:'text',text:aiText.trim()||'Оцени еду на фото.'});
     const txt=await callAI(aiSystem(),content,4000,true);
     const j=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
@@ -798,11 +814,11 @@ function renderSettings(){
     <div class="mu">Темп и цель стоит сверить с лечащим врачом.</div></div>`;
   }
   const pv=S.ai.provider;
-  h+=`<h2>ИИ</h2><div class="card"><label>Сервис</label><select id="prov" onchange="saveAI(true);S.ai.provider=this.value;save();renderSettings()">${o('proxy','Gemini через свой сервер — без VPN',pv)}${o('gemini','Gemini напрямую — нужен VPN',pv)}${o('claude','Claude (Anthropic) — платно, VPN',pv)}</select>
+  h+=`<h2>ИИ</h2><div class="card"><label>Сервис</label><select id="prov" onchange="saveAI(true);S.ai.provider=this.value;save();renderSettings()">${o('proxy','Свой сервер (GigaChat) — без VPN',pv)}${o('gemini','Gemini напрямую — нужен VPN',pv)}${o('claude','Claude (Anthropic) — платно, VPN',pv)}</select>
   ${pv==='proxy'?`<label>Адрес функции или ID проекта Supabase</label><input id="pu" value="${esc(S.ai.pUrl||'')}" placeholder="например abcdefghijklmnop" autocomplete="off" autocapitalize="off">
   <label>Токен приложения</label><div class="row"><input id="pt" class="grow" type="password" value="${esc(S.ai.pToken||'')}" placeholder="длинный пароль" autocomplete="off"><button onclick="genToken()">Создать</button></div>
-  <div class="mu sm mt">Ключ Gemini хранится на сервере, в телефоне его нет. Токен — пароль между приложением и сервером: тот же должен быть в секрете APP_TOKEN.</div>
-  ${S.ai.gModel?`<div class="mu sm">Модель: ${esc(S.ai.gModel)}${proxyRegion?' · сервер: '+esc(proxyRegion):''}</div>`:''}`
+  <div class="mu sm mt">Ключ ИИ хранится на сервере, в телефоне его нет. Токен — пароль между приложением и сервером: тот же должен быть в секрете APP_TOKEN. Через свой сервер — только текст, без фото.</div>
+  ${S.ai.pModel?`<div class="mu sm">Модель: ${esc(S.ai.pModel)}${proxyRegion?' · сервер: '+esc(proxyRegion):''}</div>`:''}`
   :pv==='gemini'?`<label>Ключ Gemini</label><input id="gk" type="password" value="${esc(S.ai.gKey)}" placeholder="вставь ключ сюда" autocomplete="off">
   <div class="mu sm mt">Модель: ${S.ai.gModel?esc(S.ai.gModel):'подберётся сама при первой проверке'}</div>
   <div class="card in sm"><b>Как получить бесплатный ключ</b><ol style="margin:6px 0;padding-left:18px"><li>Включи VPN (Google не работает с российских адресов).</li><li>Открой aistudio.google.com, войди Google-аккаунтом.</li><li>Get API key → Create API key. Карта не нужна.</li><li>Скопируй ключ (начинается с AIza… или AQ.…) и вставь сюда.</li></ol>VPN нужен и потом, во время оценки еды.</div>`
@@ -813,7 +829,7 @@ function renderSettings(){
   <div id="aistat"></div><div class="mu sm mt">Ключи хранятся только на этом телефоне.</div></div>
   <h2>Данные</h2><div class="card"><div class="mu sm">Всё хранится в телефоне. Делай резервную копию раз в пару недель.</div>
   <div class="row gap"><button onclick="exportData()">⬇ Сохранить копию</button><label class="btn" style="margin:0;color:var(--tx);font-size:15px">⬆ Загрузить копию<input type="file" accept=".json,application/json" hidden onchange="importData(this)"></label></div>
-  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v6</div>`;
+  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v7</div>`;
   $('#view').innerHTML=h;
 }
 function saveProfile(){
@@ -825,7 +841,7 @@ function saveProfile(){
 }
 function saveOver(){for(const k of['kcal','p','f','c','sug','fib']){const v=$('#ov_'+k).value;if(v==='')delete S.over[k];else S.over[k]=+v}save();render();toast('Сохранено')}
 function saveAI(silent){
-  if($('#pu')){const u=$('#pu').value.trim();if(u!==S.ai.pUrl){S.ai.pUrl=u;S.ai.gModel=''}S.ai.pToken=$('#pt').value.trim()}
+  if($('#pu')){const u=$('#pu').value.trim();if(u!==S.ai.pUrl){S.ai.pUrl=u;S.ai.pModel=''}S.ai.pToken=$('#pt').value.trim()}
   if($('#gk')){const k=$('#gk').value.trim();if(k!==S.ai.gKey){S.ai.gKey=k;S.ai.gModel=''}}
   if($('#ak')){S.ai.key=$('#ak').value.trim();S.ai.model=$('#am2').value.trim()||DEF.ai.model}
   save();if(!silent)toast('Сохранено');
@@ -834,8 +850,8 @@ async function testAI(){
   saveAI(true);if(!aiReady())return toast('Вставь ключ');const st=$('#aistat');if(st)st.innerHTML='<div class="mu sm mt">Проверяю…</div>';
   try{
     if(isGem())await geminiModel(true);
-    await callAI('Ответь одним словом.',[{type:'text',text:'Скажи: работает'}],50);
-    const m=isGem()?aiUsedModel+(S.ai.provider==='proxy'&&proxyRegion?' · сервер: '+proxyRegion:''):S.ai.model;
+    if(S.ai.provider==='proxy')await callProxy('ping','',[],20);else await callAI('Ответь одним словом.',[{type:'text',text:'Скажи: работает'}],50);
+    const m=S.ai.provider==='proxy'?(S.ai.pModel||'')+(proxyRegion?' · сервер: '+proxyRegion:''):isGem()?aiUsedModel:S.ai.model;
     if(tab==='set')renderSettings();const s2=$('#aistat');if(s2)s2.innerHTML=`<div class="card in" style="margin-top:12px"><b class="okc">✓ ИИ работает</b><div class="mu sm">Модель: ${esc(m)}</div></div>`;
   }catch(e){const s2=$('#aistat');if(s2)s2.innerHTML=aiErrHTML(e);else toast(e.message)}
 }
