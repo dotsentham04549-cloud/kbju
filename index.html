@@ -3,89 +3,134 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f1312">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <title>КБЖУ</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-:root{--bg:#0f1312;--card:#171d1b;--card2:#212a27;--tx:#e8eeeb;--mu:#8b9b95;--ac:#4cc38a;--ac2:#2c8a5e;--warn:#e5a54b;--bad:#e5645b;--line:#2a3431}
+:root{--bg:#f2f2f7;--card:#fff;--card2:#f2f2f7;--tx:#1c1c1e;--mu:#8e8e93;--line:#e5e5ea;--track:#ececf1;
+--ac:#34c759;--act:#248a3d;--acbg:rgba(52,199,89,.13);--kc:#34c759;--cp:#0a84ff;--cf:#ff9f0a;--cc:#af52de;--sug:#ff2d55;--fib:#30b0c7;
+--bad:#ff3b30;--warn:#c77700;--okt:#248a3d;--modt:#a05a00;--limt:#d70015;
+--sh:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);--tabbg:rgba(249,249,251,.86)}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--card2:#2c2c2e;--tx:#f5f5f7;--mu:#98989f;--line:#38383a;--track:#2c2c2e;
+--ac:#30d158;--act:#30d158;--acbg:rgba(48,209,88,.16);--kc:#30d158;--cp:#0a84ff;--cf:#ff9f0a;--cc:#bf5af2;--sug:#ff375f;--fib:#40c8e0;
+--bad:#ff453a;--warn:#ffd60a;--okt:#30d158;--modt:#ffd60a;--limt:#ff6961;--sh:none;--tabbg:rgba(22,22,24,.86)}}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
-main{padding:10px 14px 100px;max-width:640px;margin:0 auto}
-h2{font-size:19px;margin:10px 0 6px}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.38 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+main{padding:calc(14px + env(safe-area-inset-top)) 16px 110px;max-width:640px;margin:0 auto}
+h2{font-size:22px;font-weight:700;margin:22px 0 8px;letter-spacing:-.3px}
 p{margin:6px 0}
-.card{background:var(--card);border-radius:14px;padding:12px 14px;margin:10px 0}
-.card.in{background:var(--card2)}
-button,.btn{font:inherit;color:inherit;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;justify-content:center}
-button.pri{background:var(--ac2);border-color:var(--ac2);color:#fff;font-weight:600}
-button.danger{color:var(--bad)}
-button:disabled{opacity:.5}
-.wide{width:100%;margin-top:10px;padding:11px}
-input,select,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%}
+.card{background:var(--card);border-radius:20px;padding:16px;margin:12px 0;box-shadow:var(--sh)}
+.card.in{background:var(--card2);box-shadow:none}
+button,.btn{font:inherit;font-size:15px;font-weight:600;color:var(--act);background:var(--acbg);border:0;border-radius:12px;padding:10px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+button:active,.btn:active{opacity:.7}
+button.pri{background:var(--ac);color:#fff}
+button.danger{color:var(--bad);background:rgba(255,59,48,.1)}
+button:disabled{opacity:.45}
+.wide{width:100%;margin-top:12px;padding:14px;font-size:16px}
+input,select,textarea{font:inherit;color:var(--tx);background:var(--card2);border:1px solid transparent;border-radius:12px;padding:11px 12px;width:100%;outline:none;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--mu) 50%),linear-gradient(135deg,var(--mu) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+.card.in input,.card.in select,.card.in textarea{background:var(--card)}
 textarea{resize:vertical}
-label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+label{display:block;font-size:13px;color:var(--mu);margin:12px 0 5px;font-weight:500}
 .row{display:flex;gap:8px;align-items:center}
 .sp{justify-content:space-between}
-.gap{gap:8px;flex-wrap:wrap;margin-top:8px}
+.gap{gap:8px;flex-wrap:wrap;margin-top:10px}
 .grow{flex:1;min-width:0}
 .w80{width:80px;flex:none}
 .mu{color:var(--mu)}
-.sm{font-size:12.5px}
+.sm{font-size:13px}
 .mt{margin-top:10px}
 .right{text-align:right}
 .bad{color:var(--bad)}
-.okc{color:var(--ac)}
+.okc{color:var(--okt)}
 .warn{color:var(--warn)}
-.datebar{display:flex;align-items:center;justify-content:space-between;margin:4px 0}
-.datebar b{font-size:17px}
-.datebar button{width:44px;font-size:20px;padding:4px}
-.kc{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px}
-.big{font-size:32px;font-weight:700;line-height:1}
-.bar{height:8px;background:var(--card2);border-radius:5px;overflow:hidden;margin-top:4px}
-.bar i{display:block;height:100%;background:var(--ac);border-radius:5px}
-.bar i.over{background:var(--bad)}
-.bar i.done{background:#7fe0b0}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:12px}
+/* шапка дня */
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin:4px 2px 6px}
+.title{font-size:32px;font-weight:800;letter-spacing:-.6px;line-height:1.1}
+.nav{width:38px;height:38px;border-radius:50%;padding:0;font-size:22px;background:var(--card);color:var(--tx);box-shadow:var(--sh)}
+/* главное кольцо */
+.hero{padding:18px 14px 16px}
+.hero-top{display:flex;align-items:center;justify-content:space-between}
+.side{width:72px;text-align:center}
+.side .v{font-size:20px;font-weight:700}
+.ring-wrap{position:relative;width:176px;height:176px;flex:none}
+.ring-wrap svg{display:block}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.big{font-size:40px;font-weight:800;line-height:1;letter-spacing:-1px}
+.macros{display:flex;justify-content:space-around;margin-top:16px}
+.mac{text-align:center;width:96px}
+.mac .rw{position:relative;width:62px;height:62px;margin:0 auto}
+.mac .rw div{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.mac b{display:block;font-size:13px;margin-top:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:16px}
 .m{font-size:13px}
-.chips{display:flex;gap:6px;overflow-x:auto;padding:4px 0 2px;scrollbar-width:none}
+.bar{height:7px;background:var(--track);border-radius:4px;overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--ac);transition:width .4s}
+.bar i.over{background:var(--bad)!important}
+.alc{margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(255,59,48,.1);color:var(--bad);font-size:14px}
+/* чипы */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 6px;margin:0 -2px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{white-space:nowrap;border-radius:20px;padding:7px 12px;font-size:14px;flex:none}
-.ent{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
-.card.ent{border-top:0;padding:10px 14px}
+.chip{white-space:nowrap;border-radius:20px;padding:8px 14px;font-size:14px;flex:none;background:var(--card);color:var(--tx);box-shadow:var(--sh);font-weight:500}
+.card.in .chip,.box .chip{background:var(--card2);box-shadow:none}
+.hint{font-size:13px;color:var(--mu);margin:2px 4px}
+/* приёмы пищи */
+.meal{padding:14px 16px}
+.meal-h{display:flex;align-items:center;gap:12px}
+.mi{width:42px;height:42px;border-radius:12px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.meal-h b{font-size:17px}
+.addc{width:36px;height:36px;border-radius:50%;padding:0;font-size:24px;font-weight:400;flex:none}
+.link{background:none;padding:8px 0 0;font-size:14px}
+.ent{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.meal .ent:first-of-type{margin-top:10px}
 .ent>div:first-child{flex:1;min-width:0}
-.list .it{padding:9px 2px;border-bottom:1px solid var(--line);cursor:pointer}
-.list .it:active{background:var(--card2)}
-.star{font-size:20px;color:var(--mu);background:none;border:0;padding:4px 8px}
-.star.on{color:#f2c94c}
-.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;margin-top:10px}
-.seg button{flex:1;border:0;background:none}
-.seg button.on{background:var(--card2);color:var(--ac);font-weight:600}
-.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:#121716;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
-.tabs button{flex:1;border:0;background:none;border-radius:0;padding:8px 0 10px;font-size:12px;color:var(--mu);flex-direction:column;gap:1px}
-.tabs button span{font-size:19px}
-.tabs button.on{color:var(--ac)}
-.fab{position:fixed;right:16px;bottom:calc(72px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:var(--ac);color:#04140c;font-size:30px;border:0;box-shadow:0 4px 14px rgba(0,0,0,.4);z-index:6}
-.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;z-index:10}
-.sheet .box{background:var(--card);width:100%;max-width:640px;margin:0 auto;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:14px 14px calc(20px + env(safe-area-inset-bottom))}
+.ent .k{font-weight:600}
+.card.ent{border-top:0;padding:14px 16px}
+.list{margin-top:6px}
+.list .it{padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.list .it:active{opacity:.6}
+.star{font-size:22px;color:var(--line);background:none;padding:4px 8px}
+.star.on{color:#ffcc00}
+.seg{display:flex;background:var(--card2);border-radius:11px;padding:3px;margin-top:12px}
+.seg button{flex:1;background:none;color:var(--tx);font-weight:500;padding:8px;border-radius:9px}
+.seg button.on{background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.12);font-weight:600}
+/* таббар */
+.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--tabbg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+.tabs button{flex:1;background:none;border-radius:0;padding:7px 0 9px;font-size:11px;font-weight:500;color:var(--mu);flex-direction:column;gap:2px}
+.tabs button span{font-size:21px;line-height:1.1;filter:grayscale(1);opacity:.55}
+.tabs button.on{color:var(--act)}
+.tabs button.on span{filter:none;opacity:1}
+.fab{position:fixed;right:18px;bottom:calc(76px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:var(--ac);color:#fff;font-size:32px;font-weight:300;padding:0;box-shadow:0 6px 18px rgba(52,199,89,.45);z-index:6}
+/* шторка */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;z-index:10;animation:fade .2s}
+.sheet .box{background:var(--card);width:100%;max-width:640px;margin:0 auto;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:8px 16px calc(22px + env(safe-area-inset-bottom));animation:up .25s ease-out}
+.box:before{content:"";display:block;width:38px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.box .x{width:32px;height:32px;border-radius:50%;padding:0;background:var(--card2);color:var(--mu);font-size:15px}
+@keyframes up{from{transform:translateY(40px);opacity:.5}}
+@keyframes fade{from{opacity:0}}
 .hidden{display:none!important}
-.thumb{height:46px;border-radius:8px}
-.drow{padding:8px 0;border-bottom:1px solid var(--line)}
-.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;margin-right:4px}
-.b-ok{background:#1d3b2c;color:#7fe0b0}.b-mod{background:#3b331d;color:#f2c94c}.b-lim{background:#3b1f1d;color:#f08a82}
-#toast{position:fixed;left:50%;bottom:140px;transform:translateX(-50%);background:#e8eeeb;color:#111;padding:9px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
-#toast.show{opacity:1}
+.thumb{height:46px;border-radius:10px}
+.drow{padding:10px 0;border-bottom:1px solid var(--line)}
+.badge{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:9px;margin-right:6px}
+.b-ok{background:rgba(52,199,89,.15);color:var(--okt)}.b-mod{background:rgba(255,159,10,.17);color:var(--modt)}.b-lim{background:rgba(255,59,48,.13);color:var(--limt)}
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-20px);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:22px;font-size:14px;font-weight:500;opacity:0;transition:.25s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
 canvas{width:100%;height:190px;display:block}
-.prog{position:relative;height:12px;background:var(--card2);border-radius:6px;margin:8px 0 4px}
-.prog i{position:absolute;left:0;top:0;bottom:0;background:var(--ac);border-radius:6px}
-.prog b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--warn)}
+.prog{position:relative;height:10px;background:var(--track);border-radius:5px;margin:12px 0 6px}
+.prog i{position:absolute;left:0;top:0;bottom:0;background:var(--ac);border-radius:5px}
+.prog b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--cf);border-radius:1px}
+.kv{display:flex;justify-content:space-between;padding:5px 0}
 ul{margin:6px 0;padding-left:18px}
-li{margin:3px 0}
+li{margin:4px 0}
 </style>
 </head>
 <body>
 <main id="view"></main>
-<button class="fab hidden" id="fab" onclick="openAdd()">＋</button>
 <nav class="tabs" id="tabs"></nav>
 <div id="sheet" class="sheet hidden" onclick="if(event.target===this)closeSheet()"><div class="box" id="sbox"></div></div>
 <div id="toast"></div>
@@ -297,7 +342,7 @@ function perLine(n){let s=`${r0(n.kcal)} ккал · Б ${r1(n.p)} · Ж ${r1(n.
 const BASE=BASE_RAW.trim().split('\n').map(l=>{const a=l.split(';');return{id:'b'+hash(a[0]),type:'base',name:a[0].trim(),per:{kcal:+a[1],p:+a[2],f:+a[3],c:+a[4],fib:+a[5]||0,sug:+a[6]||0,alc:+a[7]||0},portion:+a[8]||100}});
 
 /* ===== Состояние ===== */
-const DEF={profile:null,over:{},diary:{},weights:[],foods:[],usage:{},ai:{key:'',model:'claude-sonnet-5-5'}};
+const DEF={profile:null,over:{},diary:{},weights:[],foods:[],usage:{},ai:{provider:'gemini',gKey:'',gModel:'',key:'',model:'claude-sonnet-5-5'}};
 const clone=o=>JSON.parse(JSON.stringify(o));
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');const o=Object.assign(clone(DEF),s||{});o.ai=Object.assign(clone(DEF.ai),o.ai||{});return o}catch(e){return clone(DEF)}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Не удалось сохранить: '+e.message)}}
@@ -331,27 +376,39 @@ const TABS=[['diary','🍽','Дневник'],['dish','★','Блюда'],['prog
 function render(){
   if(!S.profile)tab='set';
   $('#tabs').innerHTML=TABS.map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()"><span>${i}</span>${l}</button>`).join('');
-  $('#fab').classList.toggle('hidden',tab!=='diary');
+  
   ({diary:renderDiary,dish:renderDishes,prog:renderProg,set:renderSettings})[tab]();
   window.scrollTo(0,0);
 }
-function barH(v,t,mode){const pct=t>0?Math.min(100,v/t*100):0;const cls=mode==='max'&&v>t*1.03?'over':mode==='min'&&v>=t?'done':'';return `<div class="bar"><i class="${cls}" style="width:${pct}%"></i></div>`}
-function bar(lbl,v,t,mode,unit='г'){return `<div class="m"><div class="row sp"><span>${lbl}</span><span class="mu">${r0(v)} / ${mode==='max'?'≤':'≥'}${r0(t)} ${unit}</span></div>${barH(v,t,mode)}</div>`}
+function barH(v,t,mode,col){const pct=t>0?Math.min(100,v/t*100):0;const cls=mode==='max'&&v>t*1.03?'over':'';return `<div class="bar"><i class="${cls}" style="width:${pct}%;${col?'background:'+col:''}"></i></div>`}
+function bar(lbl,v,t,mode,col,unit='г'){return `<div class="m"><div class="row sp"><span>${lbl}</span><span class="mu">${r0(v)} / ${mode==='max'?'≤':'≥'}${r0(t)} ${unit}</span></div>${barH(v,t,mode,col)}</div>`}
+function ring(sz,sw,v,t,col,canOver){
+  const c=sz/2,r=(sz-sw)/2,C=2*Math.PI*r,p=t>0?Math.min(1,v/t):0,over=canOver&&v>t*1.03;
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}"><circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--track)" stroke-width="${sw}"/>${p>0?`<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${over?'var(--bad)':col}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${(C*p).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 ${c} ${c})"/>`:''}</svg>`;
+}
+function mac(lbl,v,t,col,canOver){return `<div class="mac"><div class="rw">${ring(62,7,v,t,col,canOver)}<div>${r0(v)}</div></div><b>${lbl}</b><div class="mu sm">из ${r0(t)} г</div></div>`}
+const MICON={zav:'🍳',obed:'🍲',per:'🍎',uzh:'🌙'};
+function fullDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}
 
 function renderDiary(){
   const t=targets(),day=S.diary[cur]||[],tot=sumN(day),left=t.kcal-tot.kcal;
-  let h=`<div class="datebar"><button onclick="go(-1)">‹</button><b onclick="cur=today();render()">${dLabel(cur)}</b><button onclick="go(1)" ${cur>=today()?'disabled':''}>›</button></div>`;
-  h+=`<div class="card"><div class="kc"><div><div class="big ${left<0?'bad':''}">${left<0?'+'+r0(-left):r0(left)}</div><div class="mu sm">${left<0?'ккал сверх нормы':'ккал осталось'}</div></div><div class="mu sm right">съедено ${r0(tot.kcal)}<br>норма ${t.kcal}</div></div>${barH(tot.kcal,t.kcal,'max')}
-  <div class="grid2">${bar('Белки',tot.p,t.p,'min')}${bar('Жиры',tot.f,t.f,'max')}${bar('Углеводы',tot.c,t.c,'max')}${bar('Сахар доб.',tot.sug,t.sug,'max')}${bar('Клетчатка',tot.fib,t.fib,'min')}${tot.alc>0?`<div class="m bad">Алкоголь: ${r1(tot.alc)} г этанола<br><span class="sm">≈ ${r1(tot.alc/10)} станд. порции</span></div>`:''}</div></div>`;
+  let h=`<div class="top"><div onclick="cur=today();render()"><div class="mu sm">${fullDate(cur)}</div><div class="title">${dLabel(cur)}</div></div><div class="row"><button class="nav" onclick="go(-1)">‹</button><button class="nav" onclick="go(1)" ${cur>=today()?'disabled':''}>›</button></div></div>`;
+  h+=`<div class="card hero"><div class="hero-top"><div class="side"><div class="v">${r0(tot.kcal)}</div><div class="mu sm">съедено</div></div>
+  <div class="ring-wrap">${ring(176,15,tot.kcal,t.kcal,'var(--kc)',true)}<div class="ring-center"><div class="big ${left<0?'bad':''}">${r0(Math.abs(left))}</div><div class="mu sm">${left<0?'ккал сверх нормы':'ккал осталось'}</div></div></div>
+  <div class="side"><div class="v">${t.kcal}</div><div class="mu sm">норма</div></div></div>
+  <div class="macros">${mac('Белки',tot.p,t.p,'var(--cp)',false)}${mac('Жиры',tot.f,t.f,'var(--cf)',true)}${mac('Углеводы',tot.c,t.c,'var(--cc)',true)}</div>
+  <div class="grid2">${bar('Сахар доб.',tot.sug,t.sug,'max','var(--sug)')}${bar('Клетчатка',tot.fib,t.fib,'min','var(--fib)')}</div>
+  ${tot.alc>0?`<div class="alc">Алкоголь: ${r1(tot.alc)} г этанола ≈ ${r1(tot.alc/10)} станд. порции</div>`:''}</div>`;
   const q=quickItems();
   if(q.length)h+=`<div class="chips">${q.map(i=>`<button class="chip" onclick="openPortion('${i.id}')">${i.pinned?'★ ':''}${esc(i.name)}</button>`).join('')}</div>`;
-  else h+=`<div class="mu sm">Совет: отметь ★ свои частые блюда — они появятся здесь кнопками.</div>`;
+  else h+=`<div class="hint">Отметь ★ свои частые блюда — они появятся здесь кнопками.</div>`;
   const yd=S.diary[shift(cur,-1)]||[];
   for(const[mk,ml]of MEALS){
     const es=day.filter(e=>e.meal===mk),s=sumN(es),y=yd.filter(e=>e.meal===mk);
-    h+=`<div class="card"><div class="row sp"><b>${ml}</b><span class="mu">${es.length?r0(s.kcal)+' ккал':''}</span></div>`;
-    h+=es.map(e=>`<div class="ent" onclick="editEntry('${e.id}')"><div><div>${e.ai?'<span class="okc">✦</span> ':''}${esc(e.name)}</div><div class="mu sm">${r0(e.g)} г · Б ${r0(e.n.p)} · Ж ${r0(e.n.f)} · У ${r0(e.n.c)}${e.n.sug>0.4?' · сах '+r0(e.n.sug):''}${e.n.alc>0?' · алк '+r1(e.n.alc)+' г':''}</div></div><div>${r0(e.n.kcal)}</div></div>`).join('');
-    h+=`<div class="row gap"><button onclick="openAdd('${mk}')">＋ Добавить</button>${!es.length&&y.length?`<button onclick="repeatY('${mk}')">↻ Как вчера (${r0(sumN(y).kcal)} ккал)</button>`:''}</div></div>`;
+    h+=`<div class="card meal"><div class="meal-h"><div class="mi">${MICON[mk]}</div><div class="grow"><b>${ml}</b><div class="mu sm">${es.length?`${r0(s.kcal)} ккал · Б ${r0(s.p)} · Ж ${r0(s.f)} · У ${r0(s.c)}`:'пока пусто'}</div></div><button class="addc" onclick="openAdd('${mk}')">＋</button></div>`;
+    h+=es.map(e=>`<div class="ent" onclick="editEntry('${e.id}')"><div><div>${e.ai?'<span class="okc">✦</span> ':''}${esc(e.name)}</div><div class="mu sm">${r0(e.g)} г · Б ${r0(e.n.p)} · Ж ${r0(e.n.f)} · У ${r0(e.n.c)}${e.n.sug>0.4?' · сах '+r0(e.n.sug):''}${e.n.alc>0?' · алк '+r1(e.n.alc)+' г':''}</div></div><div class="k">${r0(e.n.kcal)}</div></div>`).join('');
+    if(!es.length&&y.length)h+=`<button class="link" onclick="repeatY('${mk}')">↻ Как вчера · ${r0(sumN(y).kcal)} ккал</button>`;
+    h+=`</div>`;
   }
   $('#view').innerHTML=h;
 }
@@ -369,7 +426,7 @@ function repeatY(mk){
 function openSheet(html){const b=$('#sbox'),st=b.scrollTop,was=!$('#sheet').classList.contains('hidden');b.innerHTML=html;$('#sheet').classList.remove('hidden');if(was)b.scrollTop=st;else b.scrollTop=0}
 function closeSheet(){$('#sheet').classList.add('hidden');$('#sbox').innerHTML=''}
 function mealSelect(id,val,onch){return `<select id="${id}" onchange="${onch}">${MEALS.map(([k,l])=>`<option value="${k}" ${k===val?'selected':''}>${l}</option>`).join('')}</select>`}
-const head=t=>`<div class="row sp"><b style="font-size:17px">${t}</b><button onclick="closeSheet()">✕</button></div>`;
+const head=t=>`<div class="row sp"><b style="font-size:19px">${t}</b><button class="x" onclick="closeSheet()">✕</button></div>`;
 
 function addEntry(name,n,g,meal,src,ai){
   (S.diary[cur]=S.diary[cur]||[]).push({id:uid(),name,g:+g,meal,n,src:src||null,ai:!!ai});
@@ -448,7 +505,7 @@ function entryToFood(){
 /* ===== ИИ ===== */
 function renderAI(){
   const b=$('#addBody');
-  if(!S.ai.key){b.innerHTML=`<div class="card in">Для ИИ нужен API-ключ Claude — вставь его в «Настройках».<br><button class="mt" onclick="closeSheet();tab='set';render()">Открыть настройки</button></div>`;return}
+  if(!aiReady()){b.innerHTML=`<div class="card in">Для ИИ нужен ключ — бесплатный ключ Gemini вставляется в «Настройках».<br><button class="mt" onclick="closeSheet();tab='set';render()">Открыть настройки</button></div>`;return}
   b.innerHTML=`<textarea id="aitx" class="mt" rows="3" placeholder="Например: тарелка борща со сметаной, 2 куска чёрного хлеба, чай с ложкой сахара" oninput="aiText=this.value">${esc(aiText)}</textarea>
   <div class="row gap"><label class="btn" style="margin:0;color:var(--tx);font-size:15px">📷 Камера<input type="file" accept="image/*" capture="environment" hidden onchange="pickImg(this)"></label><label class="btn" style="margin:0;color:var(--tx);font-size:15px">🖼 Галерея<input type="file" accept="image/*" hidden onchange="pickImg(this)"></label>${aiImg?`<img class="thumb" src="data:image/jpeg;base64,${aiImg}"><button onclick="aiImg=null;renderAI()">✕</button>`:''}</div>
   <div class="mu sm mt">Чем точнее — тем лучше: «200 г», «полная тарелка», «жарил на масле».</div>
@@ -461,7 +518,50 @@ function pickImg(inp){
   img.onload=()=>{const k=Math.min(1,1280/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);aiImg=c.toDataURL('image/jpeg',0.82).split(',')[1];renderAI()};
   img.onerror=()=>toast('Не удалось открыть фото');img.src=url;
 }
+/* --- ИИ: общий вход. content: [{type:'image',data:base64jpeg},{type:'text',text}] --- */
+const aiReady=()=>S.ai.provider==='claude'?!!S.ai.key:!!S.ai.gKey;
+function callAI(system,content,maxTokens,json){return S.ai.provider==='claude'?callClaude(system,content,maxTokens):callGemini(system,content,maxTokens,json)}
+
+/* --- Gemini (бесплатный ключ из Google AI Studio) --- */
+async function gfetch(path,body){
+  let r;
+  try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/'+path,body?{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':S.ai.gKey.trim()},body:JSON.stringify(body)}:{headers:{'x-goog-api-key':S.ai.gKey.trim()}})}
+  catch(e){throw new Error('Нет связи с Gemini. Проверь интернет и VPN.')}
+  let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok){const m=(j.error&&j.error.message)||'';
+    if(/location is not supported|not supported in your|country|region/i.test(m))throw new Error('Gemini недоступен из этой страны — включи VPN');
+    if(/api key|API_KEY/i.test(m)||r.status===401)throw new Error('Неверный ключ Gemini');
+    if(r.status===429)throw new Error('Лимит бесплатных запросов на сейчас исчерпан — попробуй через минуту или завтра');
+    if(r.status===404){S.ai.gModel='';save();throw new Error('Модель Gemini сменилась — нажми ещё раз')}
+    if(r.status===403)throw new Error('Доступ запрещён (403) — проверь VPN и ключ. '+m);
+    throw new Error('Gemini: ошибка '+r.status+'. '+m)}
+  return j;
+}
+async function geminiModel(force){
+  if(S.ai.gModel&&!force)return S.ai.gModel;
+  const ms=[];let tok='';
+  do{const j=await gfetch('models?pageSize=200'+(tok?'&pageToken='+tok:''));(j.models||[]).forEach(m=>{if((m.supportedGenerationMethods||[]).includes('generateContent'))ms.push(m.name.replace(/^models\//,''))});tok=j.nextPageToken||''}while(tok);
+  const score=n=>{const m=n.match(/^gemini-(\d+(?:\.\d+)?)-flash(.*)$/);if(!m)return -1;const rest=m[2];if(/image|tts|audio|live|embed|thinking|computer|robotics/.test(rest))return -1;let s=parseFloat(m[1])*100;if(/lite/.test(rest))s-=50;if(/preview|exp/.test(rest))s-=40;if(/\d{2,}/.test(rest))s-=3;return s};
+  let best='',bs=-1;for(const n of ms){const s=score(n);if(s>bs){bs=s;best=n}}
+  if(!best)best=ms.find(n=>/flash/.test(n))||ms.find(n=>/gemini/.test(n))||'';
+  if(!best)throw new Error('Не нашёл подходящую модель Gemini для этого ключа');
+  S.ai.gModel=best;save();return best;
+}
+async function callGemini(system,content,maxTokens,json){
+  const model=await geminiModel();
+  const parts=content.map(c=>c.type==='image'?{inline_data:{mime_type:'image/jpeg',data:c.data}}:{text:c.text});
+  const cfg={temperature:0.2,maxOutputTokens:Math.max(maxTokens,1024)};if(json)cfg.responseMimeType='application/json';
+  const j=await gfetch(`models/${model}:generateContent`,{system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts}],generationConfig:cfg});
+  const cand=(j.candidates||[])[0];
+  if(!cand){const br=j.promptFeedback&&j.promptFeedback.blockReason;throw new Error('Gemini не ответил'+(br?' ('+br+')':''))}
+  const txt=((cand.content&&cand.content.parts)||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+  if(!txt)throw new Error('Пустой ответ Gemini'+(cand.finishReason?' ('+cand.finishReason+')':'')+' — попробуй ещё раз');
+  return txt;
+}
+
+/* --- Claude (платный ключ Anthropic) --- */
 async function callClaude(system,content,maxTokens){
+  content=content.map(c=>c.type==='image'?{type:'image',source:{type:'base64',media_type:'image/jpeg',data:c.data}}:c);
   let r;
   try{
     r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.ai.key.trim(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:S.ai.model.trim()||DEF.ai.model,max_tokens:maxTokens,system,messages:[{role:'user',content}]})});
@@ -489,9 +589,9 @@ async function runAI(){
   const btn=$('#aibtn');btn.disabled=true;btn.textContent='✦ Считаю…';
   try{
     const content=[];
-    if(aiImg)content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:aiImg}});
+    if(aiImg)content.push({type:'image',data:aiImg});
     content.push({type:'text',text:aiText.trim()||'Оцени еду на фото.'});
-    const txt=await callClaude(aiSystem(),content,2000);
+    const txt=await callAI(aiSystem(),content,4000,true);
     const j=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
     aiDraft={comment:j.comment||'',items:(j.items||[]).map(x=>{const g=+x.grams||100;return{name:x.name||'Блюдо',g,per:scale({kcal:x.kcal,p:x.p,f:x.f,c:x.c,sug:x.sug,fib:x.fib,alc:x.alc},100/g),liver:x.liver,note:x.note||''}})};
     if(!aiDraft.items.length)throw new Error('ИИ не распознал еду');
@@ -606,17 +706,18 @@ function addWeight(){const v=parseFloat(String($('#wv').value).replace(',','.'))
 function delWeight(d){if(!confirm('Удалить запись веса?'))return;S.weights=S.weights.filter(x=>x.d!==d);save();render()}
 function drawChart(){
   const cv=$('#wch');if(!cv)return;const ws=sortedW(),dpr=devicePixelRatio||1,W=cv.clientWidth,H=190;cv.width=W*dpr;cv.height=H*dpr;const x=cv.getContext('2d');x.scale(dpr,dpr);
-  x.font='12px system-ui';x.fillStyle='#8b9b95';
+  const cs=getComputedStyle(document.documentElement),cv_=n=>cs.getPropertyValue(n).trim();
+  x.font='12px system-ui';x.fillStyle=cv_('--mu');
   if(ws.length<2){x.fillText('Нужно хотя бы 2 взвешивания',10,H/2);return}
   const d0=dayNum(ws[0].d),d1=dayNum(ws[ws.length-1].d),span=Math.max(1,d1-d0);
   let mn=Math.min(...ws.map(w=>w.w)),mx=Math.max(...ws.map(w=>w.w));mn-=0.5;mx+=0.5;
   const px=d=>34+(d-d0)/span*(W-44),py=v=>10+(mx-v)/(mx-mn)*(H-30);
-  x.strokeStyle='#2a3431';x.lineWidth=1;
+  x.strokeStyle=cv_('--line');x.lineWidth=1;
   for(let i=0;i<=4;i++){const v=mn+(mx-mn)*i/4,y=py(v);x.beginPath();x.moveTo(30,y);x.lineTo(W,y);x.stroke();x.fillText(r1(v),0,y+4)}
   x.fillText(dLabel(ws[0].d),34,H-4);const l=dLabel(ws[ws.length-1].d);x.fillText(l,W-x.measureText(l).width-2,H-4);
   const avg=ws.map(w=>{const dn=dayNum(w.d),xs=ws.filter(z=>{const a=dn-dayNum(z.d);return a>=0&&a<7});return{dn,v:xs.reduce((s,z)=>s+z.w,0)/xs.length}});
-  x.strokeStyle='#4cc38a';x.lineWidth=2.5;x.beginPath();avg.forEach((a,i)=>{const X=px(a.dn),Y=py(a.v);i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke();
-  x.fillStyle='#e8eeeb';ws.forEach(w=>{x.beginPath();x.arc(px(dayNum(w.d)),py(w.w),2.5,0,7);x.fill()});
+  x.strokeStyle=cv_('--kc');x.lineWidth=3;x.lineJoin='round';x.beginPath();avg.forEach((a,i)=>{const X=px(a.dn),Y=py(a.v);i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke();
+  x.fillStyle=cv_('--mu');ws.forEach(w=>{x.beginPath();x.arc(px(dayNum(w.d)),py(w.w),2.5,0,7);x.fill()});
 }
 
 /* ===== Настройки ===== */
@@ -625,7 +726,7 @@ function renderSettings(){
   const o=(v,l,c)=>`<option value="${v}" ${String(v)===String(c)?'selected':''}>${l}</option>`;
   let h=`<h2>Профиль</h2>${!S.profile?'<p class="mu">Заполни один раз — приложение посчитает норму калорий и БЖУ под тебя.</p>':''}
   <div class="card"><label>Пол</label><select id="sx">${o('m','мужской',p.sex)}${o('f','женский',p.sex)}</select>
-  <div class="row gap"><div class="grow"><label>Возраст</label><input id="ag" type="number" inputmode="numeric" value="${p.age}"></div><div class="grow"><label>Рост, см</label><input id="hh" type="number" inputmode="numeric" value="${p.h}"></div><div class="grow"><label>Вес на старте, кг</label><input id="ww" type="number" step="0.1" inputmode="decimal" value="${p.w}"></div></div>
+  <div class="row gap"><div class="grow"><label>Возраст</label><input id="ag" type="number" inputmode="numeric" value="${p.age}"></div><div class="grow"><label>Рост, см</label><input id="hh" type="number" inputmode="numeric" value="${p.h}"></div><div class="grow"><label>Вес, кг</label><input id="ww" type="number" step="0.1" inputmode="decimal" value="${p.w}"></div></div>
   <label>Активность</label><select id="ac">${o(1.2,'Сидячая, почти без движения',p.act)}${o(1.375,'Лёгкая: много хожу / 1–3 тренировки в неделю',p.act)}${o(1.55,'Средняя: 3–5 тренировок или работа на ногах',p.act)}${o(1.725,'Высокая: тяжёлый физический труд / каждый день',p.act)}</select>
   <label>Темп снижения</label><select id="pc">${o(0.5,'0,5 кг/нед — бережно (рекомендую)',p.pace)}${o(0.75,'0,75 кг/нед',p.pace)}${o(1,'1 кг/нед — максимум для печени',p.pace)}</select>
   <button class="pri wide" onclick="saveProfile()">${S.profile?'Сохранить профиль':'Посчитать норму'}</button></div>`;
@@ -636,7 +737,7 @@ function renderSettings(){
     <div class="mu sm mt">Можно задать свои цифры (например, по рекомендации врача). Пустое поле — авто.</div>
     <div class="row gap">${ov('kcal','Ккал','')}${ov('p','Белки','г')}${ov('f','Жиры','г')}${ov('c','Углеводы','г')}${ov('sug','Сахар ≤','г')}${ov('fib','Клетчатка ≥','г')}</div>
     <div class="row gap"><button class="pri" onclick="saveOver()">Сохранить свои</button><button onclick="S.over={};save();render()">Вернуть авто</button></div></div>
-    <div class="card in sm"><b>Почему так (жировая печень)</b><ul>
+    <div class="card sm"><b>Почему так (жировая печень)</b><ul>
     <li>Снижение веса на 7–10% — главное лечение: печень заметно разгружается. Это цели на вкладке «Прогресс».</li>
     <li>Худеть плавно, 0,5–1 кг в неделю: слишком резкое похудение печени вредит.</li>
     <li>Белок повышен — чтобы уходил жир, а не мышцы.</li>
@@ -645,13 +746,19 @@ function renderSettings(){
     <li>Алкоголь при больной печени — лучше ноль, он считается отдельно.</li></ul>
     <div class="mu">Темп и цель стоит сверить с лечащим врачом.</div></div>`;
   }
-  h+=`<h2>ИИ (Claude)</h2><div class="card"><label>API-ключ</label><input id="ak" type="password" value="${esc(S.ai.key)}" placeholder="sk-ant-…" autocomplete="off">
+  const g=S.ai.provider!=='claude';
+  h+=`<h2>ИИ</h2><div class="card"><label>Сервис</label><select id="prov" onchange="saveAI(true);S.ai.provider=this.value;save();renderSettings()">${o('gemini','Google Gemini — бесплатно',S.ai.provider)}${o('claude','Claude (Anthropic) — платно',S.ai.provider)}</select>
+  ${g?`<label>Ключ Gemini</label><input id="gk" type="password" value="${esc(S.ai.gKey)}" placeholder="AIza…" autocomplete="off">
+  <div class="mu sm mt">Модель: ${S.ai.gModel?esc(S.ai.gModel):'подберётся сама при первой проверке'}</div>
+  <div class="card in sm"><b>Как получить бесплатный ключ</b><ol style="margin:6px 0;padding-left:18px"><li>Включи VPN (Google не работает с российских адресов).</li><li>Открой aistudio.google.com, войди Google-аккаунтом.</li><li>Get API key → Create API key. Карта не нужна.</li><li>Скопируй ключ (начинается с AIza…) и вставь сюда.</li></ol>VPN нужен и потом, во время оценки еды.</div>`
+  :`<label>API-ключ Claude</label><input id="ak" type="password" value="${esc(S.ai.key)}" placeholder="sk-ant-…" autocomplete="off">
   <label>Модель</label><input id="am2" value="${esc(S.ai.model)}">
+  <div class="mu sm mt">Ключ: console.anthropic.com → API Keys (нужен VPN и пополненный баланс зарубежной картой).</div>`}
   <div class="row gap"><button class="pri" onclick="saveAI()">Сохранить</button><button onclick="testAI()">Проверить связь</button></div>
-  <div class="mu sm mt">Ключ создаётся на console.anthropic.com → API Keys (нужен VPN и пополненный баланс). Ключ хранится только на этом телефоне. Одна оценка блюда стоит доли цента.</div></div>
+  <div class="mu sm mt">Ключи хранятся только на этом телефоне.</div></div>
   <h2>Данные</h2><div class="card"><div class="mu sm">Всё хранится в телефоне. Делай резервную копию раз в пару недель.</div>
   <div class="row gap"><button onclick="exportData()">⬇ Сохранить копию</button><label class="btn" style="margin:0;color:var(--tx);font-size:15px">⬆ Загрузить копию<input type="file" accept=".json,application/json" hidden onchange="importData(this)"></label></div>
-  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v1</div>`;
+  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v2</div>`;
   $('#view').innerHTML=h;
 }
 function saveProfile(){
@@ -662,8 +769,19 @@ function saveProfile(){
   save();if(first){tab='diary';toast('Норма посчитана: '+targets().kcal+' ккал')}else toast('Сохранено');render();
 }
 function saveOver(){for(const k of['kcal','p','f','c','sug','fib']){const v=$('#ov_'+k).value;if(v==='')delete S.over[k];else S.over[k]=+v}save();render();toast('Сохранено')}
-function saveAI(){S.ai.key=$('#ak').value.trim();S.ai.model=$('#am2').value.trim()||DEF.ai.model;save();toast('Сохранено')}
-async function testAI(){saveAI();if(!S.ai.key)return toast('Вставь ключ');toast('Проверяю…');try{await callClaude('Ответь одним словом.',[{type:'text',text:'Скажи: работает'}],20);toast('✓ ИИ работает')}catch(e){toast(e.message)}}
+function saveAI(silent){
+  if($('#gk')){const k=$('#gk').value.trim();if(k!==S.ai.gKey){S.ai.gKey=k;S.ai.gModel=''}}
+  if($('#ak')){S.ai.key=$('#ak').value.trim();S.ai.model=$('#am2').value.trim()||DEF.ai.model}
+  save();if(!silent)toast('Сохранено');
+}
+async function testAI(){
+  saveAI(true);if(!aiReady())return toast('Вставь ключ');toast('Проверяю…');
+  try{
+    if(S.ai.provider!=='claude')await geminiModel(true);
+    await callAI('Ответь одним словом.',[{type:'text',text:'Скажи: работает'}],50);
+    toast('✓ ИИ работает'+(S.ai.provider!=='claude'?': '+S.ai.gModel:''));if(tab==='set')renderSettings();
+  }catch(e){toast(e.message)}
+}
 function exportData(){const b=new Blob([JSON.stringify({...S,ai:{...S.ai,key:''}},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kbju-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 function importData(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.diary)throw 0;if(!confirm('Заменить текущие данные копией?'))return;const key=S.ai.key;S=Object.assign(clone(DEF),o);S.ai=Object.assign(clone(DEF.ai),o.ai||{});if(!S.ai.key)S.ai.key=key;save();render();toast('Загружено')}catch(e){toast('Это не файл копии')}};r.readAsText(f)}
 function resetAll(){if(confirm('Точно стереть всё: дневник, вес, блюда?')&&confirm('Это необратимо. Стереть?')){localStorage.removeItem(KEY);S=load();render()}}
