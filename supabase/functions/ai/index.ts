@@ -66,6 +66,16 @@ Deno.serve(async (req: Request) => {
       body: "scope=GIGACHAT_API_PERS",
     });
     out.api = await probe("https://gigachat.devices.sberbank.ru/api/v1/models");
+    try {
+      const pem = await (await fetch("https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt")).text();
+      const client = (Deno as any).createHttpClient({ caCerts: [pem] });
+      out.oauthWithCa = await probe("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", {
+        method: "POST", client,
+        headers: { "content-type": "application/x-www-form-urlencoded", "RqUID": crypto.randomUUID(), "Authorization": "Basic ZHVtbXk6ZHVtbXk=" },
+        body: "scope=GIGACHAT_API_PERS",
+      } as any);
+      out.apiWithCa = await probe("https://gigachat.devices.sberbank.ru/api/v1/models", { client } as any);
+    } catch (e) { out.caErr = String(e); }
     out.cert = await probe("https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt");
     return reply(out);
   }
