@@ -1,5 +1,5 @@
 // КБЖУ — service worker. Трогает только свои кэши (kbju-*), чужие приложения на том же адресе не задевает.
-const C = 'kbju-v7';
+const C = 'kbju-v8';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 const SCOPE = new URL(self.registration.scope).pathname;
 
