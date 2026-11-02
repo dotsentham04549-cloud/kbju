@@ -748,9 +748,9 @@ function renderSettings(){
   }
   const g=S.ai.provider!=='claude';
   h+=`<h2>ИИ</h2><div class="card"><label>Сервис</label><select id="prov" onchange="saveAI(true);S.ai.provider=this.value;save();renderSettings()">${o('gemini','Google Gemini — бесплатно',S.ai.provider)}${o('claude','Claude (Anthropic) — платно',S.ai.provider)}</select>
-  ${g?`<label>Ключ Gemini</label><input id="gk" type="password" value="${esc(S.ai.gKey)}" placeholder="AIza…" autocomplete="off">
+  ${g?`<label>Ключ Gemini</label><input id="gk" type="password" value="${esc(S.ai.gKey)}" placeholder="вставь ключ сюда" autocomplete="off">
   <div class="mu sm mt">Модель: ${S.ai.gModel?esc(S.ai.gModel):'подберётся сама при первой проверке'}</div>
-  <div class="card in sm"><b>Как получить бесплатный ключ</b><ol style="margin:6px 0;padding-left:18px"><li>Включи VPN (Google не работает с российских адресов).</li><li>Открой aistudio.google.com, войди Google-аккаунтом.</li><li>Get API key → Create API key. Карта не нужна.</li><li>Скопируй ключ (начинается с AIza…) и вставь сюда.</li></ol>VPN нужен и потом, во время оценки еды.</div>`
+  <div class="card in sm"><b>Как получить бесплатный ключ</b><ol style="margin:6px 0;padding-left:18px"><li>Включи VPN (Google не работает с российских адресов).</li><li>Открой aistudio.google.com, войди Google-аккаунтом.</li><li>Get API key → Create API key. Карта не нужна.</li><li>Скопируй ключ (начинается с AIza… или AQ.…) и вставь сюда.</li></ol>VPN нужен и потом, во время оценки еды.</div>`
   :`<label>API-ключ Claude</label><input id="ak" type="password" value="${esc(S.ai.key)}" placeholder="sk-ant-…" autocomplete="off">
   <label>Модель</label><input id="am2" value="${esc(S.ai.model)}">
   <div class="mu sm mt">Ключ: console.anthropic.com → API Keys (нужен VPN и пополненный баланс зарубежной картой).</div>`}
