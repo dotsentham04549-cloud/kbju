@@ -538,18 +538,21 @@ const aiReady=()=>S.ai.provider==='claude'?!!S.ai.key:!!S.ai.gKey;
 function callAI(system,content,maxTokens,json){return S.ai.provider==='claude'?callClaude(system,content,maxTokens):callGemini(system,content,maxTokens,json)}
 
 /* --- Gemini (бесплатный ключ из Google AI Studio) --- */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function gErr(msg,status,raw){const e=new Error(msg);e.status=status;e.raw=raw||'';return e}
 async function gfetch(path,body){
   let r;
   try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/'+path,body?{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':S.ai.gKey.trim()},body:JSON.stringify(body)}:{headers:{'x-goog-api-key':S.ai.gKey.trim()}})}
-  catch(e){throw new Error('Нет связи с Gemini. Проверь интернет и VPN.')}
+  catch(e){throw gErr('Нет связи с Gemini. Проверь интернет и что VPN включён.',0)}
   let j={};try{j=await r.json()}catch(e){}
-  if(!r.ok){const m=(j.error&&j.error.message)||'';
-    if(/location is not supported|not supported in your|country|region/i.test(m))throw new Error('Gemini недоступен из этой страны — включи VPN');
-    if(/api key|API_KEY/i.test(m)||r.status===401)throw new Error('Неверный ключ Gemini');
-    if(r.status===429)throw new Error('Лимит бесплатных запросов на сейчас исчерпан — попробуй через минуту или завтра');
-    if(r.status===404){S.ai.gModel='';save();throw new Error('Модель Gemini сменилась — нажми ещё раз')}
-    if(r.status===403)throw new Error('Доступ запрещён (403) — проверь VPN и ключ. '+m);
-    throw new Error('Gemini: ошибка '+r.status+'. '+m)}
+  if(!r.ok){const m=(j.error&&j.error.message)||'',st=r.status;
+    if(/location is not supported|not supported in your|user location/i.test(m))throw gErr('Gemini не пускает из России — включи VPN (сервер в Европе или США).',st,m);
+    if(/api key not valid|API_KEY_INVALID|api key expired/i.test(m)||st===401)throw gErr('Ключ Gemini не принят — проверь, что вставлен целиком.',st,m);
+    if(st===429)throw gErr('Лимит бесплатных запросов исчерпан.',st,m);
+    if(st===404)throw gErr('Модель Gemini не найдена.',st,m);
+    if(st===503||st===500)throw gErr('Сервер Gemini перегружен.',st,m);
+    if(st===403)throw gErr('Доступ запрещён — проверь VPN и ключ.',st,m);
+    throw gErr('Gemini: ошибка '+st+'.',st,m)}
   return j;
 }
 async function geminiModel(force){
@@ -557,22 +560,40 @@ async function geminiModel(force){
   const ms=[];let tok='';
   do{const j=await gfetch('models?pageSize=200'+(tok?'&pageToken='+tok:''));(j.models||[]).forEach(m=>{if((m.supportedGenerationMethods||[]).includes('generateContent'))ms.push(m.name.replace(/^models\//,''))});tok=j.nextPageToken||''}while(tok);
   const score=n=>{const m=n.match(/^gemini-(\d+(?:\.\d+)?)-flash(.*)$/);if(!m)return -1;const rest=m[2];if(/image|tts|audio|live|embed|thinking|computer|robotics/.test(rest))return -1;let s=parseFloat(m[1])*100;if(/lite/.test(rest))s-=50;if(/preview|exp/.test(rest))s-=40;if(/\d{2,}/.test(rest))s-=3;return s};
-  let best='',bs=-1;for(const n of ms){const s=score(n);if(s>bs){bs=s;best=n}}
-  if(!best)best=ms.find(n=>/flash/.test(n))||ms.find(n=>/gemini/.test(n))||'';
-  if(!best)throw new Error('Не нашёл подходящую модель Gemini для этого ключа');
-  S.ai.gModel=best;save();return best;
+  let c=ms.filter(n=>score(n)>=0).sort((a,b)=>score(b)-score(a));
+  if(!c.length)c=ms.filter(n=>/flash/.test(n)).concat(ms.filter(n=>/gemini/.test(n)&&!/flash/.test(n)));
+  if(!c.length)throw gErr('Не нашёл подходящую модель Gemini для этого ключа',0);
+  S.ai.gModels=c.slice(0,6);S.ai.gModel=c[0];save();return c[0];
 }
-async function callGemini(system,content,maxTokens,json){
-  const model=await geminiModel();
-  const parts=content.map(c=>c.type==='image'?{inline_data:{mime_type:'image/jpeg',data:c.data}}:{text:c.text});
-  const cfg={temperature:0.2,maxOutputTokens:Math.max(maxTokens,1024)};if(json)cfg.responseMimeType='application/json';
+async function geminiGen(model,system,parts,cfg){
   const j=await gfetch(`models/${model}:generateContent`,{system_instruction:{parts:[{text:system}]},contents:[{role:'user',parts}],generationConfig:cfg});
   const cand=(j.candidates||[])[0];
-  if(!cand){const br=j.promptFeedback&&j.promptFeedback.blockReason;throw new Error('Gemini не ответил'+(br?' ('+br+')':''))}
+  if(!cand){const br=j.promptFeedback&&j.promptFeedback.blockReason;throw gErr('Gemini не ответил'+(br?' ('+br+')':''),0)}
   const txt=((cand.content&&cand.content.parts)||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
-  if(!txt)throw new Error('Пустой ответ Gemini'+(cand.finishReason?' ('+cand.finishReason+')':'')+' — попробуй ещё раз');
+  if(!txt)throw gErr('Пустой ответ Gemini'+(cand.finishReason?' ('+cand.finishReason+')':''),-1);
   return txt;
 }
+let aiUsedModel='';
+async function callGemini(system,content,maxTokens,json){
+  let first=await geminiModel();
+  const parts=content.map(c=>c.type==='image'?{inline_data:{mime_type:'image/jpeg',data:c.data}}:{text:c.text});
+  const cfg={temperature:0.2,maxOutputTokens:Math.max(maxTokens,2048)};if(json)cfg.responseMimeType='application/json';
+  let list=[first,...(S.ai.gModels||[]).filter(m=>m!==first)].slice(0,4),last=null,refreshed=false;
+  for(let i=0;i<list.length;i++){
+    const model=list[i];
+    for(let attempt=0;attempt<2;attempt++){
+      try{const t=await geminiGen(model,system,parts,cfg);aiUsedModel=model;return t}
+      catch(e){last=e;
+        if((e.status===503||e.status===500||e.status===-1)&&attempt===0){await sleep(1500);continue}
+        if(e.status===404&&!refreshed){refreshed=true;first=await geminiModel(true);list=[first,...(S.ai.gModels||[]).filter(m=>m!==first)].slice(0,4);i=-1;break}
+        if(e.status===429||e.status===503||e.status===500||e.status===404||e.status===-1)break; // пробуем следующую модель
+        throw e}
+    }
+  }
+  if(last&&last.status===429)last.message='Лимит бесплатных запросов исчерпан на всех моделях — подожди минуту (лимит в минуту) или до завтра (дневной).';
+  throw last;
+}
+function aiErrHTML(e){return `<div class="card in" style="margin-top:12px"><b class="bad">Не получилось</b><div class="mt">${esc(e.message)}</div>${e.raw?`<div class="mu sm mt">Ответ сервиса: ${esc(String(e.raw).slice(0,300))}</div>`:''}${e.status>0?`<div class="mu sm">Код: ${e.status}</div>`:''}</div>`}
 
 /* --- Claude (платный ключ Anthropic) --- */
 async function callClaude(system,content,maxTokens){
@@ -611,7 +632,7 @@ async function runAI(){
     aiDraft={comment:j.comment||'',items:(j.items||[]).map(x=>{const g=+x.grams||100;return{name:x.name||'Блюдо',g,per:scale({kcal:x.kcal,p:x.p,f:x.f,c:x.c,sug:x.sug,fib:x.fib,alc:x.alc},100/g),liver:x.liver,note:x.note||''}})};
     if(!aiDraft.items.length)throw new Error('ИИ не распознал еду');
     renderAI();
-  }catch(e){toast(e.message);const b=$('#aibtn');if(b){b.disabled=false;b.textContent='✦ Оценить'}}
+  }catch(e){const b=$('#aibtn');if(b){b.disabled=false;b.textContent='✦ Повторить'}const r=$('#aires');if(r)r.innerHTML=aiErrHTML(e);else toast(e.message)}
 }
 const liverBadge=l=>l==='limit'?'<span class="badge b-lim">печени: реже</span>':l==='moderate'?'<span class="badge b-mod">печени: умеренно</span>':l==='ok'?'<span class="badge b-ok">печени: ок</span>':'';
 function renderDraft(){
@@ -770,10 +791,10 @@ function renderSettings(){
   <label>Модель</label><input id="am2" value="${esc(S.ai.model)}">
   <div class="mu sm mt">Ключ: console.anthropic.com → API Keys (нужен VPN и пополненный баланс зарубежной картой).</div>`}
   <div class="row gap"><button class="pri" onclick="saveAI()">Сохранить</button><button onclick="testAI()">Проверить связь</button></div>
-  <div class="mu sm mt">Ключи хранятся только на этом телефоне.</div></div>
+  <div id="aistat"></div><div class="mu sm mt">Ключи хранятся только на этом телефоне.</div></div>
   <h2>Данные</h2><div class="card"><div class="mu sm">Всё хранится в телефоне. Делай резервную копию раз в пару недель.</div>
   <div class="row gap"><button onclick="exportData()">⬇ Сохранить копию</button><label class="btn" style="margin:0;color:var(--tx);font-size:15px">⬆ Загрузить копию<input type="file" accept=".json,application/json" hidden onchange="importData(this)"></label></div>
-  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v4</div>`;
+  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v5</div>`;
   $('#view').innerHTML=h;
 }
 function saveProfile(){
@@ -790,15 +811,16 @@ function saveAI(silent){
   save();if(!silent)toast('Сохранено');
 }
 async function testAI(){
-  saveAI(true);if(!aiReady())return toast('Вставь ключ');toast('Проверяю…');
+  saveAI(true);if(!aiReady())return toast('Вставь ключ');const st=$('#aistat');if(st)st.innerHTML='<div class="mu sm mt">Проверяю…</div>';
   try{
     if(S.ai.provider!=='claude')await geminiModel(true);
     await callAI('Ответь одним словом.',[{type:'text',text:'Скажи: работает'}],50);
-    toast('✓ ИИ работает'+(S.ai.provider!=='claude'?': '+S.ai.gModel:''));if(tab==='set')renderSettings();
-  }catch(e){toast(e.message)}
+    const m=S.ai.provider!=='claude'?aiUsedModel:S.ai.model;
+    if(tab==='set')renderSettings();const s2=$('#aistat');if(s2)s2.innerHTML=`<div class="card in" style="margin-top:12px"><b class="okc">✓ ИИ работает</b><div class="mu sm">Модель: ${esc(m)}</div></div>`;
+  }catch(e){const s2=$('#aistat');if(s2)s2.innerHTML=aiErrHTML(e);else toast(e.message)}
 }
-function exportData(){const b=new Blob([JSON.stringify({...S,ai:{...S.ai,key:''}},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kbju-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
-function importData(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.diary)throw 0;if(!confirm('Заменить текущие данные копией?'))return;const key=S.ai.key;S=Object.assign(clone(DEF),o);S.ai=Object.assign(clone(DEF.ai),o.ai||{});if(!S.ai.key)S.ai.key=key;save();render();toast('Загружено')}catch(e){toast('Это не файл копии')}};r.readAsText(f)}
+function exportData(){const b=new Blob([JSON.stringify({...S,ai:{...S.ai,key:'',gKey:''}},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kbju-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function importData(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.diary)throw 0;if(!confirm('Заменить текущие данные копией?'))return;const key=S.ai.key,gk=S.ai.gKey;S=Object.assign(clone(DEF),o);S.ai=Object.assign(clone(DEF.ai),o.ai||{});if(!S.ai.key)S.ai.key=key;if(!S.ai.gKey)S.ai.gKey=gk;save();render();toast('Загружено')}catch(e){toast('Это не файл копии')}};r.readAsText(f)}
 function resetAll(){if(confirm('Точно стереть всё: дневник, вес, блюда?')&&confirm('Это необратимо. Стереть?')){localStorage.removeItem(KEY);S=load();seedStarter();render()}}
 
 /* ===== Мои блюда: стартовый набор ===== */
