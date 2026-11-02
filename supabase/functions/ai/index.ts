@@ -48,6 +48,28 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return fail(405, "Только POST");
 
+  // ВРЕМЕННО: диагностика доступности GigaChat из региона функции (без секретов, ничего не тратит)
+  if (new URL(req.url).searchParams.get("diag") === "giga") {
+    const probe = async (url: string, init: RequestInit = {}) => {
+      const t = Date.now();
+      try {
+        const r = await fetch(url, { ...init, signal: AbortSignal.timeout(12000) });
+        return { url, status: r.status, ms: Date.now() - t, body: (await r.text()).slice(0, 160) };
+      } catch (e) {
+        return { url, ms: Date.now() - t, error: e instanceof Error ? e.name + ": " + e.message : String(e) };
+      }
+    };
+    const out: Record<string, unknown> = { region: REGION, createHttpClient: typeof (Deno as any).createHttpClient };
+    out.oauth = await probe("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded", "RqUID": crypto.randomUUID(), "Authorization": "Basic ZHVtbXk6ZHVtbXk=" },
+      body: "scope=GIGACHAT_API_PERS",
+    });
+    out.api = await probe("https://gigachat.devices.sberbank.ru/api/v1/models");
+    out.cert = await probe("https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt");
+    return reply(out);
+  }
+
   if (!GEMINI_KEY || !APP_TOKEN) return fail(500, "На сервере не заданы секреты GEMINI_KEY и APP_TOKEN");
   if (!same(req.headers.get("x-app-token") ?? "", APP_TOKEN)) return fail(401, "Неверный токен приложения");
 
