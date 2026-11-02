@@ -226,7 +226,7 @@ const BASE_RAW=`
 Сыр плавленый;257;16.8;20;2.4;0;0;0;30
 Масло сливочное 82%;748;0.5;82.5;0.8;0;0;0;10
 Сливки 10%;118;3;10;4;0;0;0;20
-Масло подсолнечное (1 ст.л. ≈ 10 г);899;0;99.9;0;0;0;0;10
+Масло подсолнечное (1 ст.л. ≈ 15 г);899;0;99.9;0;0;0;0;15
 Масло оливковое;898;0;99.8;0;0;0;0;10
 Майонез 67%;624;0.3;67;2.6;0;2;0;15
 Кетчуп;93;1.8;1;22;0.3;16;0;20
@@ -318,6 +318,17 @@ const BASE_RAW=`
 Пицца;260;11;10;31;2;3;0;150
 Бургер;250;13;12;24;1;4;0;220
 Роллы;175;7;5;25;0.8;3;0;220
+Мука пшеничная;334;10.3;1.1;70;3.5;0;0;30
+Крахмал;343;0.1;0;85;0;0;0;25
+Альбумин (сухой яичный белок);360;80;0;5;0;0;0;30
+Ветчина из индейки;105;16;4;1;0;0;0;50
+Форель (сырая);141;19.9;6.2;0;0;0;0;130
+Овощи свежие (микс);22;1;0.2;4;1.5;0;0;150
+Сыр лёгкий (Б30 Ж10, по этикетке);210;30;10;0;0;0;0;30
+Колбаса п/к для пиццы (Б16 Ж50, по этикетке);514;16;50;0;0;0;0;30
+Томаты в собственном соку;20;1;0.2;3.5;1;0;0;100
+Джем;250;0.4;0.1;65;1;55;0;20
+Слойка;338;3.7;16.8;39.7;1;10;0;65
 `;
 
 /* ===== Утилиты ===== */
@@ -627,7 +638,7 @@ function renderDishes(){
   const it=S.foods.slice().sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(S.usage[b.id]||0)-(S.usage[a.id]||0));
   let h=`<h2>Мои блюда</h2><p class="mu sm">★ — кнопка на главном экране. «Рецепт» — вводишь ингредиенты и вес готового блюда, КБЖУ на 100 г считается само. «Продукт» — переписать КБЖУ с упаковки.</p>
   <div class="row gap"><button class="pri" onclick="editDish()">＋ Рецепт</button><button onclick="editFood()">＋ Продукт</button></div>`;
-  h+=it.length?it.map(i=>`<div class="card ent"><div onclick="${i.type==='dish'?`editDish('${i.id}')`:`editFood('${i.id}')`}"><div>${esc(i.name)} <span class="mu sm">· ${i.type==='dish'?'рецепт':'продукт'}</span></div><div class="mu sm">100 г: ${perLine(i.per)}<br>порция ${i.portion} г = ${r0(i.per.kcal*i.portion/100)} ккал</div></div><button class="star ${i.pinned?'on':''}" onclick="togglePin('${i.id}')">★</button></div>`).join(''):`<div class="card mu">Пока пусто. Добавь свой борщ, кашу, котлеты — один раз, дальше одной кнопкой. Ещё можно нажать на любую запись в дневнике → «Сделать постоянным».</div>`;
+  h+=it.length?it.map(i=>`<div class="card ent"><div onclick="${i.type==='dish'?`editDish('${i.id}')`:`editFood('${i.id}')`}"><div>${esc(i.name)} <span class="mu sm">· ${i.type==='dish'?'рецепт':'продукт'}</span></div><div class="mu sm">100 г: ${perLine(i.per)}<br>порция ${i.portion} г = ${r0(i.per.kcal*i.portion/100)} ккал${i.note?`<br><i>${esc(i.note)}</i>`:''}</div></div><button class="star ${i.pinned?'on':''}" onclick="togglePin('${i.id}')">★</button></div>`).join(''):`<div class="card mu">Пока пусто. Добавь свой борщ, кашу, котлеты — один раз, дальше одной кнопкой. Ещё можно нажать на любую запись в дневнике → «Сделать постоянным».</div>`;
   $('#view').innerHTML=h;
 }
 function togglePin(id){const f=S.foods.find(x=>x.id===id);if(f){f.pinned=!f.pinned;save();renderDishes()}}
@@ -762,7 +773,7 @@ function renderSettings(){
   <div class="mu sm mt">Ключи хранятся только на этом телефоне.</div></div>
   <h2>Данные</h2><div class="card"><div class="mu sm">Всё хранится в телефоне. Делай резервную копию раз в пару недель.</div>
   <div class="row gap"><button onclick="exportData()">⬇ Сохранить копию</button><label class="btn" style="margin:0;color:var(--tx);font-size:15px">⬆ Загрузить копию<input type="file" accept=".json,application/json" hidden onchange="importData(this)"></label></div>
-  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v3</div>`;
+  <button class="danger wide" onclick="resetAll()">Стереть все данные</button></div><div class="mu sm right">КБЖУ · v4</div>`;
   $('#view').innerHTML=h;
 }
 function saveProfile(){
@@ -788,7 +799,48 @@ async function testAI(){
 }
 function exportData(){const b=new Blob([JSON.stringify({...S,ai:{...S.ai,key:''}},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kbju-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 function importData(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.diary)throw 0;if(!confirm('Заменить текущие данные копией?'))return;const key=S.ai.key;S=Object.assign(clone(DEF),o);S.ai=Object.assign(clone(DEF.ai),o.ai||{});if(!S.ai.key)S.ai.key=key;save();render();toast('Загружено')}catch(e){toast('Это не файл копии')}};r.readAsText(f)}
-function resetAll(){if(confirm('Точно стереть всё: дневник, вес, блюда?')&&confirm('Это необратимо. Стереть?')){localStorage.removeItem(KEY);S=load();render()}}
+function resetAll(){if(confirm('Точно стереть всё: дневник, вес, блюда?')&&confirm('Это необратимо. Стереть?')){localStorage.removeItem(KEY);S=load();seedStarter();render()}}
+
+/* ===== Мои блюда: стартовый набор ===== */
+const STARTER_V=1;
+const STARTER=[
+ {k:'omelet',name:'Омлет с овощами и ветчиной',pin:1,note:'3 яйца, молоко 40, горошек 30, капуста 50, помидор 80, огурец 80, ветчина 50. Без масла — если жаришь на масле, добавь его в рецепт.',
+  ing:[['Яйцо куриное (1 шт ≈ 55 г)',165],['Молоко 2.5%',40],['Горошек зелёный консервированный',30],['Капуста белокочанная',50],['Помидор',80],['Огурец',80],['Ветчина из индейки',50]]},
+ {k:'syrnik',name:'Сырник (1 шт ≈ 75 г)',pin:1,base:'Сырники',portion:75},
+ {k:'pasta',name:'Паста с форелью и творогом',pin:1,note:'Спагетти 40 г сухих, форель 130, творог 5% 70, овощи 150. Большая порция — укажи больше граммов.',
+  ing:[['Макароны сухие (твёрдые сорта)',40],['Форель (сырая)',130],['Творог 5%',70],['Овощи свежие (микс)',150]]},
+ {k:'pollock',name:'Минтай под сырно-сметанной шапкой',pin:1,note:'Минтай 250, сыр 40, сметана 15% 30 — граммы шапки примерные, поправь под себя.',
+  ing:[['Минтай',250],['Сыр лёгкий (Б30 Ж10, по этикетке)',40],['Сметана 15%',30]]},
+ {k:'tvorog',name:'Творог с молоком и джемом',pin:1,
+  ing:[['Творог 5%',180],['Молоко 3.2%',40],['Джем',20]]},
+ {k:'oladi',name:'Оладушек с альбумином (1 шт ≈ 17 г)',pin:1,total:555,portion:17,note:'Вся партия: 2 яйца, кефир 1% 300, альбумин 60, мука 120, мёд 25 г (1 ст.л.), сода. Жарка без масла.',
+  ing:[['Яйцо куриное (1 шт ≈ 55 г)',110],['Кефир 1%',300],['Альбумин (сухой яичный белок)',60],['Мука пшеничная',120],['Мёд',25]]},
+ {k:'pure',name:'Картофельное пюре',base:'Картофельное пюре (молоко, масло)',portion:250},
+ {k:'sloyka',name:'Слойка',base:'Слойка',portion:65},
+ {k:'panko',name:'Куриная грудка в панко',per:[170,22,4,12,0,0.5],portion:150,note:'Пересчитано из старого расчёта обеда.'},
+ {k:'lula',name:'Люля из свинины (готовые)',per:[365,19,32,2,0,0.3],portion:200,note:'По рецепту из «Книги рецептов»: шея + 10–15% сала + лук. Жирно — печени реже.'},
+ {k:'shash',name:'Шашлык из свиной шеи (готовый)',per:[343,23,27,0,0,0],portion:70},
+ {k:'zapek',name:'Запеканка',per:[217,9.5,13,16.7,0,0],portion:200,note:'Из старого расчёта на 100 г, состав неизвестен.'},
+ {k:'kartof',name:'Картофельное блюдо',per:[102,3.7,1.4,18.8,0,1.5],portion:250,note:'Из старого расчёта на 100 г.'},
+ {k:'pechen',name:'Печенье домашнее (1 шт ≈ 14 г)',total:528,portion:14,
+  ing:[['Яйцо куриное (1 шт ≈ 55 г)',110],['Молоко 2.5%',100],['Сахар (1 ч.л. ≈ 5 г)',100],['Мука пшеничная',250],['Масло подсолнечное (1 ст.л. ≈ 15 г)',40]]},
+ {k:'biskv',name:'Бисквит домашний',total:520,portion:80,
+  ing:[['Яйцо куриное (1 шт ≈ 55 г)',220],['Сахар (1 ч.л. ≈ 5 г)',155],['Мука пшеничная',155],['Крахмал',25],['Масло подсолнечное (1 ст.л. ≈ 15 г)',37]]},
+ {k:'pizza',name:'Пицца на противне (колбаса + 2 сыра), кусок',total:1000,portion:85,note:'Один противень 43×31: тесто 450 г и соус из «Книги рецептов», колбаса 150, сыр 150, моцарелла 200. Кусок ≈ 1/12. Точнее — взвесь всю пиццу и впиши вес готового.',
+  ing:[['Мука пшеничная',275],['Яйцо куриное (1 шт ≈ 55 г)',28],['Масло подсолнечное (1 ст.л. ≈ 15 г)',82],['Сахар (1 ч.л. ≈ 5 г)',8],['Томаты в собственном соку',200],['Колбаса п/к для пиццы (Б16 Ж50, по этикетке)',150],['Сыр лёгкий (Б30 Ж10, по этикетке)',150],['Сыр моцарелла',200]]}
+];
+function seedStarter(){
+  if((S.starterV||0)>=STARTER_V)return;
+  const B=n=>{const b=BASE.find(x=>x.name===n);if(!b)throw new Error('нет в базе: '+n);return b};
+  for(const d of STARTER){
+    const id='st_'+d.k;if(S.foods.some(f=>f.id===id))continue;let f;
+    if(d.ing){f={id,type:'dish',name:d.name,ing:d.ing.map(([n,g])=>({name:B(n).name,g,per:{...B(n).per}})),total:d.total||'',portion:0,pinned:!!d.pin};const c=dishCalc(f);f.portion=d.portion||Math.round(c.sg);f.per=c.per}
+    else if(d.base){f={id,type:'food',name:d.name,per:{...B(d.base).per},portion:d.portion,pinned:!!d.pin}}
+    else{const[k,p,fa,c,sug=0,fib=0]=d.per;f={id,type:'food',name:d.name,per:{kcal:k,p,f:fa,c,sug,fib,alc:0},portion:d.portion,pinned:!!d.pin}}
+    if(d.note)f.note=d.note;S.foods.push(f);
+  }
+  S.starterV=STARTER_V;save();
+}
 
 /* ===== Установка приложения ===== */
 let deferredPrompt=null;
@@ -809,6 +861,7 @@ async function installApp(){
   deferredPrompt=null;render();
 }
 
+seedStarter();
 render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
 </script>
